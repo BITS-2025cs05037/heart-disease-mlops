@@ -1,0 +1,88 @@
+================================================================================
+MLOps (S2-25_AMLCSZG523)  —  Experiential Learning Assignment Submission
+================================================================================
+
+Student          : Kavya Damera
+BITS ID          : 2025cs05037
+Programme        : M.Tech, BITS Pilani — Work Integrated Learning Programmes
+Course           : MLOps (S2-25_AMLCSZG523)
+Date             : 09 May 2026
+
+================================================================================
+Deliverables in this submission package
+================================================================================
+
+  1. Final_Report.pdf                        25-page detailed report
+  2. screenshots/                            14 evidence PNGs (see index below)
+  3. COVER.txt                               this file
+
+================================================================================
+External links (graders, please open)
+================================================================================
+
+  GitHub repository (PUBLIC)
+    https://github.com/BITS-2025cs05037/heart-disease-mlops
+
+  Latest green CI run (lint -> test -> train -> docker, all 4 jobs passed)
+    https://github.com/BITS-2025cs05037/heart-disease-mlops/actions/runs/25597518608
+    Commit: 5e48016  ("Added new report")
+    Branch: main
+
+  Demo recording (8-10 min walkthrough of the full pipeline)
+    https://drive.google.com/file/d/1FLGPG4BWyEqYrqHRKCmJLMwusqq6CFD6/view?usp=sharing
+    File: 2025cs05037_MLOPS_ASSIGNMENT.mov  (Google Drive)
+    Access required: General access must be set to "Anyone with the link — Viewer"
+                     so the grader can open it without a Google sign-in.
+
+================================================================================
+Screenshot index  (under screenshots/)
+================================================================================
+
+  Task 1 — EDA & Modelling
+    pytest-pass.png                ......  pytest suite passing locally
+
+  Task 3 — Experiment tracking with MLflow
+    mlflow-experiment-list.png     ......  MLflow runs table for 'heart-disease' experiment
+    mlflow-best-run.png            ......  Run-detail page for the winning model
+    mlflow-registered-model.png    ......  Registered model 'heart-disease-classifier'
+
+  Task 5 — CI/CD (GitHub Actions)
+    github-actions-runs-list.png   ......  Workflow run history (most recent green)
+    github-actions.png             ......  Latest run with all 4 jobs green
+
+  Task 6 — Containerised API
+    docker-build-run.png           ......  Image build + container running locally
+    swagger-docs.png               ......  Auto-generated OpenAPI / Swagger UI on :8000
+    predict-curl-response.png      ......  curl /predict returning prediction JSON
+
+  Task 7 — Kubernetes deployment
+    k8s-rollout.png                ......  kubectl rollout status (deployment ready)
+    k8s-pods.png                   ......  kubectl get pods,svc,ingress,hpa -n heart-disease
+    k8s-predict.png                ......  curl /predict against the K8s service
+
+  Task 8 — Monitoring
+    prometheus-targets.png         ......  Prometheus targets page with API endpoint UP
+    grafana-dashboard.png          ......  Grafana 'Heart Disease API' dashboard with traffic
+
+================================================================================
+Reproduction in 5 commands  (any reviewer machine with Python 3.11)
+================================================================================
+
+  git clone https://github.com/BITS-2025cs05037/heart-disease-mlops.git
+  cd heart-disease-mlops
+  python3.11 -m venv .venv && source .venv/bin/activate
+  pip install -r requirements.txt -r requirements-dev.txt
+  make download-data && make train && make test && make api
+
+================================================================================
+Snapshot of results (full leaderboard in §3.3 / §4 of the PDF report)
+================================================================================
+
+  Best model              : Logistic Regression
+  Test ROC-AUC / Accuracy : 0.9621  /  88.52%
+  Models trained          : Logistic Regression, Random Forest, Gradient Boosting
+  Container image         : heart-disease-api:1.0.0  (multi-stage, non-root, RO root FS)
+  K8s objects             : Namespace, Deployment, Service, Ingress, HPA, NetworkPolicy
+  Container runtime used  : Podman 5.x  +  Minikube (driver=podman, rootful mode)
+
+================================================================================
