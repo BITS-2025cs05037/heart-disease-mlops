@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 OUT = Path(__file__).resolve().parent / "architecture.png"
 
 
-def _box(ax, x, y, w, h, text, color):
+def _box(ax, x, y, w, h, text, color, *, fontsize=10):
     box = mpatches.FancyBboxPatch(
         (x, y),
         w,
@@ -28,7 +28,36 @@ def _box(ax, x, y, w, h, text, color):
         alpha=0.95,
     )
     ax.add_patch(box)
-    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=10, weight="bold")
+    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fontsize, weight="bold")
+
+
+def _container(ax, x, y, w, h, title, color):
+    """Background container with its title pinned to the top edge.
+
+    Use for grouping inner boxes (e.g. the Kubernetes cluster band) so the
+    title text never collides with the inner boxes' centred labels.
+    """
+    box = mpatches.FancyBboxPatch(
+        (x, y),
+        w,
+        h,
+        boxstyle="round,pad=0.06,rounding_size=0.18",
+        linewidth=1.5,
+        edgecolor="#222",
+        facecolor=color,
+        alpha=0.55,
+    )
+    ax.add_patch(box)
+    ax.text(
+        x + w / 2,
+        y + h - 0.18,
+        title,
+        ha="center",
+        va="top",
+        fontsize=10,
+        weight="bold",
+        color="#1a1a1a",
+    )
 
 
 def _arrow(ax, x1, y1, x2, y2, label: str | None = None):
@@ -88,25 +117,33 @@ def render() -> Path:
     _arrow(ax, 5.8, 4.2, 6.5, 4.2, "COPY into image")
     _arrow(ax, 11.0, 5.5, 11.0, 4.7)
 
-    # Row 4 — Kubernetes
-    _box(ax, 0.3, 1.6, 12.4, 1.4, "Kubernetes Cluster (Minikube / GKE / EKS / AKS)", cluster)
-    _box(ax, 0.6, 1.85, 2.6, 0.9, "Ingress / LB", cluster)
-    _box(ax, 3.5, 1.85, 2.6, 0.9, "Service\n(ClusterIP)", cluster)
-    _box(ax, 6.4, 1.85, 2.6, 0.9, "Deployment\n+ HPA (2-6 pods)", cluster)
-    _box(ax, 9.3, 1.85, 3.1, 0.9, "Pods: FastAPI + uvicorn\n(non-root, RO FS)", cluster)
+    # Row 4 — Kubernetes (container title pinned to top, inner boxes below)
+    _container(
+        ax,
+        0.3,
+        1.4,
+        12.4,
+        1.7,
+        "Kubernetes Cluster  (Minikube / GKE / EKS / AKS)",
+        cluster,
+    )
+    _box(ax, 0.6, 1.55, 2.6, 0.9, "Ingress / LB", cluster)
+    _box(ax, 3.5, 1.55, 2.6, 0.9, "Service\n(ClusterIP)", cluster)
+    _box(ax, 6.4, 1.55, 2.6, 0.9, "Deployment\n+ HPA (2-6 pods)", cluster)
+    _box(ax, 9.3, 1.55, 3.1, 0.9, "Pods: FastAPI + uvicorn\n(non-root, RO FS)", cluster, fontsize=9)
 
-    _arrow(ax, 7.7, 3.7, 7.7, 2.8, "kubectl apply")
+    _arrow(ax, 7.7, 3.7, 7.7, 3.1, "kubectl apply")
 
     # Row 5 — monitoring + clients
-    _box(ax, 0.3, 0.2, 2.6, 0.9, "End User\n(curl / Swagger)", monitor)
-    _box(ax, 3.4, 0.2, 2.6, 0.9, "Prometheus\n(/metrics scrape)", monitor)
-    _box(ax, 6.5, 0.2, 2.6, 0.9, "Grafana\nDashboards", monitor)
-    _box(ax, 9.6, 0.2, 2.8, 0.9, "Logs (stdout JSON)\n+ alerts", monitor)
+    _box(ax, 0.3, 0.1, 2.6, 0.9, "End User\n(curl / Swagger)", monitor)
+    _box(ax, 3.4, 0.1, 2.6, 0.9, "Prometheus\n(/metrics scrape)", monitor)
+    _box(ax, 6.5, 0.1, 2.6, 0.9, "Grafana\nDashboards", monitor)
+    _box(ax, 9.6, 0.1, 2.8, 0.9, "Logs (stdout JSON)\n+ alerts", monitor)
 
-    _arrow(ax, 1.6, 1.1, 1.6, 1.6, "HTTPS")
-    _arrow(ax, 4.7, 1.6, 4.7, 1.1, "scrape")
-    _arrow(ax, 4.7, 0.65, 6.5, 0.65, "PromQL")
-    _arrow(ax, 9.0, 1.6, 10.5, 1.1, "stdout")
+    _arrow(ax, 1.6, 1.0, 1.6, 1.4, "HTTPS")
+    _arrow(ax, 4.7, 1.4, 4.7, 1.0, "scrape")
+    _arrow(ax, 6.0, 0.55, 6.5, 0.55, "PromQL")
+    _arrow(ax, 10.7, 1.4, 10.7, 1.0, "stdout")
 
     # Legend
     legend = [
