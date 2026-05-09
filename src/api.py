@@ -169,7 +169,7 @@ async def add_request_id(request: Request, call_next):
     elapsed_ms = (time.perf_counter() - started) * 1000
     response.headers["x-request-id"] = request_id
     log.info(
-        'request_id=%s method=%s path=%s status=%s duration_ms=%.2f',
+        "request_id=%s method=%s path=%s status=%s duration_ms=%.2f",
         request_id,
         request.method,
         request.url.path,
@@ -246,7 +246,7 @@ def predict(features: HeartDiseaseFeatures, request: Request) -> PredictionRespo
 
     PREDICTION_COUNTER.labels(predicted_class=str(prediction)).inc()
     log.info(
-        'request_id=%s prediction=%d probability=%.4f',
+        "request_id=%s prediction=%d probability=%.4f",
         request_id,
         prediction,
         proba,

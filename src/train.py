@@ -166,9 +166,7 @@ def _train_one_model(
 
         # Persist plots and log them as MLflow artifacts
         cm_path = PLOT_DIR / f"{spec.name}_confusion_matrix.png"
-        save_confusion_matrix(
-            y_test, y_pred, cm_path, title=f"{spec.name} confusion matrix"
-        )
+        save_confusion_matrix(y_test, y_pred, cm_path, title=f"{spec.name} confusion matrix")
         mlflow.log_artifact(str(cm_path), artifact_path="plots")
 
         roc_path = PLOT_DIR / f"{spec.name}_roc.png"
@@ -250,8 +248,7 @@ def train_all(
         "best_params": {k: str(v) for k, v in best_grid.best_params_.items()},
         "metrics": best_metrics,
         "leaderboard": [
-            {"model": name, "roc_auc": auc_, "metrics": m}
-            for name, auc_, _, m in leaderboard
+            {"model": name, "roc_auc": auc_, "metrics": m} for name, auc_, _, m in leaderboard
         ],
     }
     METRICS_PATH.write_text(json.dumps(summary, indent=2))

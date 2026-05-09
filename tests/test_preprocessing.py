@@ -45,9 +45,7 @@ def test_preprocessor_one_hot_encodes_categoricals(synthetic_dataframe):
     transformed = preprocessor.fit_transform(synthetic_dataframe[ALL_FEATURES])
 
     # Cardinality of categorical block = total unique levels across cols.
-    expected_cat_width = sum(
-        synthetic_dataframe[c].nunique() for c in CATEGORICAL_FEATURES
-    )
+    expected_cat_width = sum(synthetic_dataframe[c].nunique() for c in CATEGORICAL_FEATURES)
     cat_width = transformed.shape[1] - len(NUMERIC_FEATURES)
     assert cat_width == expected_cat_width
 
