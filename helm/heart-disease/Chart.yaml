@@ -1,0 +1,13 @@
+apiVersion: v2
+name: heart-disease
+description: Helm chart for the Heart Disease prediction API (BITS Pilani MLOps assignment).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - mlops
+  - fastapi
+  - heart-disease
+  - bits-pilani
+maintainers:
+  - name: BITS Pilani MLOps Student

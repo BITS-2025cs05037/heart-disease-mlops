@@ -1,0 +1,161 @@
+name: CI/CD Pipeline
+
+# Triggers: every push & PR, plus manual runs.
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+# Pipelines must FAIL on lint or test errors and produce clear logs.
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # --- Stage 1: lint -------------------------------------------------------
+  lint:
+    name: Lint (ruff + black)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run ruff
+        run: ruff check src tests scripts
+
+      - name: Run black (check only)
+        run: black --check src tests scripts
+
+  # --- Stage 2: tests ------------------------------------------------------
+  test:
+    name: Unit tests (pytest + coverage)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run pytest with coverage
+        run: pytest --cov=src --cov-report=term-missing --cov-report=xml --junitxml=pytest-report.xml
+
+      - name: Upload pytest report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-report
+          path: |
+            pytest-report.xml
+            coverage.xml
+
+  # --- Stage 3: train ------------------------------------------------------
+  train:
+    name: Train model (sanity)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download dataset
+        run: python scripts/download_data.py
+
+      - name: Train model with reduced grid (CI mode)
+        env:
+          # Reduce CV folds in CI to keep build under ~3 minutes.
+          MLFLOW_TRACKING_URI: file:./mlruns
+        run: python -m src.train --cv-splits 3
+
+      - name: Show trained metrics
+        run: cat artifacts/models/metrics.json
+
+      - name: Upload training artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts-${{ github.sha }}
+          path: |
+            artifacts/models/model.pkl
+            artifacts/models/metrics.json
+            artifacts/plots/
+            mlruns/
+          retention-days: 14
+
+  # --- Stage 4: docker build smoke ----------------------------------------
+  docker:
+    name: Docker build smoke
+    runs-on: ubuntu-latest
+    needs: train
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download trained model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: model-artifacts-${{ github.sha }}
+          path: artifacts/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          tags: heart-disease-api:ci-${{ github.sha }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name api -p 8000:8000 heart-disease-api:ci-${{ github.sha }}
+          sleep 8
+          curl -fsS http://localhost:8000/health
+          curl -fsS http://localhost:8000/ready
+          curl -fsS -X POST http://localhost:8000/predict \
+            -H 'Content-Type: application/json' \
+            -d '{"age":63,"sex":1,"cp":3,"trestbps":145,"chol":233,"fbs":1,"restecg":0,"thalach":150,"exang":0,"oldpeak":2.3,"slope":1,"ca":0,"thal":6}'
+          docker logs api
+          docker rm -f api

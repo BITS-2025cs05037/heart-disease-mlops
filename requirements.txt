@@ -1,0 +1,28 @@
+# Core data / ML
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.1
+scipy==1.13.1
+joblib==1.4.2
+
+# Visualisation (used by EDA + reports)
+matplotlib==3.9.2
+seaborn==0.13.2
+
+# Experiment tracking
+mlflow==2.16.2
+
+# API
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+
+# Monitoring
+prometheus-client==0.20.0
+prometheus-fastapi-instrumentator==7.0.0
+
+# Logging
+python-json-logger==2.0.7
+
+# Reporting
+python-docx==1.1.2

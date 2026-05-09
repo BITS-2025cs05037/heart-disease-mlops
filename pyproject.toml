@@ -1,0 +1,34 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["notebooks", "mlruns", "artifacts", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]  # handled by formatter
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = '''
+/(
+    \.venv
+  | mlruns
+  | artifacts
+  | notebooks
+)/
+'''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: tests that take more than a few seconds",
+    "integration: integration tests requiring trained model artifacts",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = ["src/__init__.py"]

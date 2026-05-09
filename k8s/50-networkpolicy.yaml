@@ -1,0 +1,53 @@
+# Default-deny + explicit allow. Matches the IaC security guidance.
+# Allows ingress only on port 8000 from any pod in the same namespace
+# (and the ingress-nginx namespace), and egress for DNS + HTTPS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: heart-disease-api-default-deny
+  namespace: heart-disease
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: heart-disease-api-allow
+  namespace: heart-disease
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: heart-disease-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # HTTPS for outbound (e.g. MLflow registry, model server)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 169.254.0.0/16
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - port: 443
+          protocol: TCP

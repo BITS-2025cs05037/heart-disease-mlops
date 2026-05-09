@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+  external_labels:
+    monitor: heart-disease-mlops
+
+scrape_configs:
+  # Prometheus self-scrape (so the dashboards always have at least one target).
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Heart Disease prediction API.
+  - job_name: heart-disease-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:8000"]
+        labels:
+          app: heart-disease-api
+          env: docker-compose

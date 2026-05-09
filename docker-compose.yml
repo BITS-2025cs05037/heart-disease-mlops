@@ -1,0 +1,88 @@
+# Local end-to-end stack: API + Prometheus + Grafana.
+#
+# Works with EITHER engine:
+#   docker compose up --build
+#   podman compose up --build
+#
+# Image names are fully qualified so rootless Podman (which has no implicit
+# docker.io fallback unless configured) pulls the right artefacts on first run.
+#
+# Endpoints:
+#   API           : http://localhost:8000  (Swagger at /docs)
+#   Prometheus    : http://localhost:9090
+#   Grafana       : http://localhost:3000  (admin / admin on first login)
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: heart-disease-api:latest
+    container_name: heart-api
+    ports:
+      - "8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mlops-net
+
+  prometheus:
+    image: docker.io/prom/prometheus:v2.55.0
+    container_name: prometheus
+    # No explicit `user:` — under rootless Podman the user is already mapped
+    # via UID-namespaces; under Docker, Prometheus's image uses nobody (65534)
+    # by default.
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+    networks:
+      - mlops-net
+    restart: unless-stopped
+
+  grafana:
+    image: docker.io/grafana/grafana:11.2.2
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - mlops-net
+    restart: unless-stopped
+
+networks:
+  mlops-net:
+    driver: bridge
+
+volumes:
+  prom-data:
+  grafana-data:

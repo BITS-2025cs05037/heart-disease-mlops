@@ -1,0 +1,23 @@
+{{- if .Values.ingress.enabled }}
+1. Add an /etc/hosts entry pointing your minikube IP at:
+   {{- range .Values.ingress.hosts }}
+   {{ .host }}
+   {{- end }}
+
+2. Then visit:
+   http://{{ (index .Values.ingress.hosts 0).host }}/docs
+{{- else if eq .Values.service.type "LoadBalancer" }}
+1. Run minikube tunnel in a separate terminal:
+   minikube tunnel
+
+2. Get the external IP:
+   kubectl get svc {{ include "heart-disease.fullname" . }} -n {{ .Release.Namespace }}
+
+3. Test the API:
+   curl http://<EXTERNAL-IP>/health
+{{- else }}
+1. Port-forward to test:
+   kubectl port-forward svc/{{ include "heart-disease.fullname" . }} 8000:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+
+2. Visit http://localhost:8000/docs
+{{- end }}

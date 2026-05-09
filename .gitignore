@@ -1,0 +1,85 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtualenvs
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+
+# MLflow / artifacts (allow tracked sample, ignore local runs)
+mlruns/
+mlartifacts/
+artifacts/models/*.pkl
+artifacts/models/*.joblib
+artifacts/plots/*.png
+
+# Personal walkthroughs and submission-only deliverables (not part of project code)
+SUBMISSION_GUIDE.md
+DEMO_VIDEO_SCRIPT.md
+screenshots/
+notebooks/*.executed.ipynb
+reports/Final_Report.docx
+reports/architecture.png
+
+# Data — keep raw download script, ignore actual data
+data/raw/*.csv
+data/raw/*.zip
+data/processed/*.csv
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Secrets — NEVER commit
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# OS
+Thumbs.db
+
+# Docker
+.docker/
