@@ -132,7 +132,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: model-artifacts-${{ github.sha }}
-          path: artifacts/
+          path: .
+
+      - name: Verify model artifact is at the expected path
+        run: |
+          ls -la artifacts/models/
+          test -f artifacts/models/model.pkl || (echo "ERROR: model.pkl missing"; exit 1)
+          echo "Model size: $(du -h artifacts/models/model.pkl | cut -f1)"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -150,12 +156,29 @@ jobs:
 
       - name: Smoke test the container
         run: |
+          set -e
           docker run -d --name api -p 8000:8000 heart-disease-api:ci-${{ github.sha }}
-          sleep 8
-          curl -fsS http://localhost:8000/health
-          curl -fsS http://localhost:8000/ready
+
+          echo "===== Wait for API readiness (up to 30s) ====="
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/ready > /dev/null 2>&1; then
+              echo "API is ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          echo "===== /health ====="
+          curl -fsS http://localhost:8000/health && echo
+
+          echo "===== /ready ====="
+          curl -fsS http://localhost:8000/ready && echo
+
+          echo "===== /predict ====="
           curl -fsS -X POST http://localhost:8000/predict \
             -H 'Content-Type: application/json' \
-            -d '{"age":63,"sex":1,"cp":3,"trestbps":145,"chol":233,"fbs":1,"restecg":0,"thalach":150,"exang":0,"oldpeak":2.3,"slope":1,"ca":0,"thal":6}'
+            -d '{"age":63,"sex":1,"cp":3,"trestbps":145,"chol":233,"fbs":1,"restecg":0,"thalach":150,"exang":0,"oldpeak":2.3,"slope":1,"ca":0,"thal":6}' && echo
+
+          echo "===== Container logs ====="
           docker logs api
           docker rm -f api
